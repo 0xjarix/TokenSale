@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
-import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
+import {ERC20} from "../lib/solmate/src/tokens/ERC20.sol";
 
 contract SafeDogeElonShibMoon is ERC20 {
     constructor()
