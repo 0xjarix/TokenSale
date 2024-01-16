@@ -132,11 +132,11 @@ contract TokenSale {
         if (presaleContributions[msg.sender] > presaleMinContribution)
             revert TokenSale__NoRefundAboveMinimumContribution();
         presaleContributions[msg.sender] = 0;
-        (bool succ, ) = payable(msg.sender).call{value: refundAmount}("");
-        require(succ, "TokenSale: refund failed");
         uint256 tokenAmount = calculateTokenAmount(refundAmount);
         token.approve(address(this), tokenAmount);
         token.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        (bool succ, ) = payable(msg.sender).call{value: refundAmount}("");
+        require(succ, "TokenSale: refund failed");
         emit RefundClaimed(msg.sender, refundAmount);
     }
 
@@ -148,11 +148,11 @@ contract TokenSale {
         if (publicSaleContributions[msg.sender] > publicSaleMinContribution)
             revert TokenSale__NoRefundAboveMinimumContribution();
         publicSaleContributions[msg.sender] = 0;
-        (bool succ, ) = payable(msg.sender).call{value: refundAmount}("");
-        require(succ, "TokenSale: refund failed");
         uint256 tokenAmount = calculateTokenAmount(refundAmount);
         token.approve(address(this), tokenAmount);
         token.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        (bool succ, ) = payable(msg.sender).call{value: refundAmount}("");
+        require(succ, "TokenSale: refund failed");
         emit RefundClaimed(msg.sender, refundAmount);
     }
 
