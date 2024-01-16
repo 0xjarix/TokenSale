@@ -36,7 +36,6 @@ contract TokenSaleTest is Test {
 
     // Tests
     // Contributions
-    /*
     function testPresaleContributionDuringPresale() public {
         vm.warp(block.timestamp + 1);
         vm.roll(block.number + 1);
@@ -45,7 +44,7 @@ contract TokenSaleTest is Test {
         require(succ, "failed to contribute to presale");
         assert (tokenSale.presaleContributions(address(0x2)) == 1 ether);
         assert (SafeDogeElonShibMoon(token).balanceOf(address(0x2)) == tokenSale.calculateTokenAmount(1 ether));
-    }*/
+    }
 
     function testPresaleContributionAfterPresale() public {
         vm.warp(block.timestamp + presaleDuration + 1);
@@ -54,7 +53,7 @@ contract TokenSaleTest is Test {
         deal(address(0x2), 2 ether);
         address(tokenSale).call{value: 1 ether}(abi.encodeWithSelector(tokenSale.contributeToPresale.selector));
     }
-/*
+
     function testPublicSaleContributionDuringPublicSale() public {
         vm.warp(block.timestamp + presaleDuration + publicSalePreSaleInterval + 1);
         vm.roll(block.number + 1);
@@ -63,7 +62,7 @@ contract TokenSaleTest is Test {
         assert (tokenSale.publicSaleContributions(address(0x2)) == 2 ether);
         assert (SafeDogeElonShibMoon(token).balanceOf(address(0x2)) == tokenSale.calculateTokenAmount(2 ether));
     }
-*/
+
     function testPublicSaleContributionAfterPublicSale() public {
         vm.warp(block.timestamp + presaleDuration + publicSalePreSaleInterval + publicSaleDuration + 1);
         vm.roll(block.number + 1); 
@@ -118,7 +117,7 @@ contract TokenSaleTest is Test {
         vm.expectRevert(TokenSale.TokenSale__PublicSaleCapReached.selector);
         address(tokenSale).call{value: 50001 ether}(abi.encodeWithSelector(tokenSale.contributeToPublicSale.selector));
     }
-    /*
+    
     function testPresaleContributionCap() public {
         vm.warp(block.timestamp + 1);
         vm.roll(block.number + 1);
@@ -144,51 +143,82 @@ contract TokenSaleTest is Test {
         vm.warp(block.timestamp + 1);
         vm.roll(block.number + 1);
         address alice = makeAddr("alice");
-        deal(address(0x2), 1 ether);
+        vm.startPrank(address(0x2));
         vm.expectRevert(TokenSale.TokenSale__OnlyOwnerCanDistributeTokens.selector);
-        tokenSale.distributeTokens(alice, 100000000);
-        assert (SafeDogeElonShibMoon(token).balanceOf(alice) == tokenSale.calculateTokenAmount(100000000));
-    }
-    // Refunds
-    /*
-    function testClaimRefundPresale() public {
+        tokenSale.distributeTokens(alice, 100000000);    }
 
+    // Refunds
+    function testClaimRefundPresale() public {
+        vm.warp(block.timestamp + 1);
+        vm.roll(block.number + 1);
+        deal(address(0x2), 1 ether);
+        (bool succ, ) = address(tokenSale).call{value: 1 ether}(abi.encodeWithSelector(tokenSale.contributeToPresale.selector));
+        require(succ, "failed to contribute to presale");
+        tokenSale.claimRefundPreSale();
+        assert (tokenSale.presaleContributions(address(0x2)) == 0);
     }
 
     function testClaimRefundPublicSale() public {
-
+        vm.warp(block.timestamp + presaleDuration + publicSalePreSaleInterval + 1);
+        vm.roll(block.number + 1);
+        deal(address(0x2), 1 ether);
+        (bool succ, ) = address(tokenSale).call{value: 1 ether}(abi.encodeWithSelector(tokenSale.contributeToPublicSale.selector));
+        require(succ, "failed to contribute to presale");
+        tokenSale.claimRefundPublicSale();
+        assert (tokenSale.publicSaleContributions(address(0x2)) == 0);
     }
 
     function testClaimRefundPresaleNoContribution() public {
-
+        vm.warp(block.timestamp + 1);
+        vm.roll(block.number + 1);
+        vm.startPrank(address(0x2));
+        vm.expectRevert(TokenSale.TokenSale__NoRefundAvailable.selector);
+        tokenSale.claimRefundPreSale();
     }
 
     function testClaimRefundPublicSaleNoContribution() public {
-
+        vm.warp(block.timestamp + presaleDuration + publicSalePreSaleInterval + 1);
+        vm.roll(block.number + 1);
+        vm.startPrank(address(0x2));
+        vm.expectRevert(TokenSale.TokenSale__NoRefundAvailable.selector);
+        tokenSale.claimRefundPublicSale();
     }
 
     function testClaimRefundPresaleContributedTooMuch() public {
-
+        vm.warp(block.timestamp + 1);
+        vm.roll(block.number + 1);
+        deal(address(0x2), 11 ether);
+        (bool succ, ) = address(tokenSale).call{value: 11 ether}(abi.encodeWithSelector(tokenSale.contributeToPresale.selector));
+        require(succ, "failed to contribute to presale");
+        vm.expectRevert(TokenSale.TokenSale__NoRefundAboveMinimumContribution.selector);
+        tokenSale.claimRefundPreSale();
     }
 
     function testClaimRefundPublicSaleContributedTooMuch() public {
-
+        vm.warp(block.timestamp + presaleDuration + publicSalePreSaleInterval + 1);
+        vm.roll(block.number + 1);
+        deal(address(0x2), 21 ether);
+        (bool succ, ) = address(tokenSale).call{value: 21 ether}(abi.encodeWithSelector(tokenSale.contributeToPublicSale.selector));
+        require(succ, "failed to contribute to presale");
+        vm.expectRevert(TokenSale.TokenSale__NoRefundAboveMinimumContribution.selector);
+        tokenSale.claimRefundPublicSale();
     }
 
+    // Cap Raising
     function testRaiseCapPresale() public {
         vm.warp(block.timestamp + 1);
         vm.roll(block.number + 1);
         vm.prank(address(this));
-        tokenSale.raisePresaleCap(1000000);
-        assert(tokenSale.presaleCap() == 1000000);
+        tokenSale.raisePresaleCap(10002 ether);
+        assert(tokenSale.presaleCap() == 10002 ether);
     }
     function testRaiseCapPublicSale() public {
         vm.warp(block.timestamp + 1);
         vm.roll(block.number + 1);
         vm.prank(address(this));
-        tokenSale.raisePublicSaleCap(100000);
-        assert(tokenSale.publicSaleCap() == 100000);
-    }*/
+        tokenSale.raisePublicSaleCap(100002 ether);
+        assert(tokenSale.publicSaleCap() == 100002 ether);
+    }
 
     function testRaiseCapByNotOwnerPresale() public {
         vm.warp(block.timestamp + 1);
@@ -227,7 +257,7 @@ contract TokenSaleTest is Test {
         vm.roll(block.number + 1);
         vm.prank(address(this));
         vm.expectRevert(TokenSale.TokenSale__CanOnlyRaiseCap.selector);
-        tokenSale.raisePublicSaleCap(10000);
+        tokenSale.raisePublicSaleCap(10000 ether);
     }
 
     function testRaiseCapWithSameCapPublicSale() public {
@@ -235,6 +265,6 @@ contract TokenSaleTest is Test {
         vm.roll(block.number + 1);
         vm.prank(address(this));
         vm.expectRevert(TokenSale.TokenSale__CanOnlyRaiseCap.selector);
-        tokenSale.raisePublicSaleCap(100000);
+        tokenSale.raisePublicSaleCap(100000 ether);
     }
 }

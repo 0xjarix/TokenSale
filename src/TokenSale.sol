@@ -20,7 +20,7 @@ contract TokenSale {
     error TokenSale__PublicSaleCapReached();
     error TokenSale__OnlyOwnerCanDistributeTokens();
     error TokenSale__NoRefundAvailable();
-    error TokenSale__NoRefundBelowPresaleMinimumContribution();
+    error TokenSale__NoRefundAboveMinimumContribution();
     error TokenSale__OnlyOwnerCanRaiseCap();
     error TokenSale__CanOnlyRaiseCap();
 
@@ -87,6 +87,7 @@ contract TokenSale {
             revert TokenSale__InsufficientFundsForTokens();
 
         presaleContributions[msg.sender] += msg.value;
+        token.approve(address(this), tokenAmount);
         token.safeTransferFrom(address(this), msg.sender, tokenAmount);
         emit TokensPurchased(msg.sender, tokenAmount, presaleContributions[msg.sender]);
     }
@@ -109,6 +110,7 @@ contract TokenSale {
             revert TokenSale__InsufficientFundsForTokens();
 
         publicSaleContributions[msg.sender] += msg.value;
+        token.approve(address(this), tokenAmount);
         token.safeTransferFrom(address(this), msg.sender, tokenAmount);
         emit TokensPurchased(msg.sender, tokenAmount, publicSaleContributions[msg.sender]);
     }
@@ -117,6 +119,7 @@ contract TokenSale {
     function distributeTokens(address recipient, uint256 amount) external {
         if (msg.sender != owner)
             revert TokenSale__OnlyOwnerCanDistributeTokens();
+        token.approve(address(this), amount);
         token.safeTransferFrom(address(this), recipient, amount);
         emit TokensDistributed(recipient, amount);
     }
@@ -127,11 +130,12 @@ contract TokenSale {
         if (presaleContributions[msg.sender] == 0)
             revert TokenSale__NoRefundAvailable();
         if (presaleContributions[msg.sender] > presaleMinContribution)
-            revert TokenSale__NoRefundBelowPresaleMinimumContribution();
+            revert TokenSale__NoRefundAboveMinimumContribution();
         presaleContributions[msg.sender] = 0;
         (bool succ, ) = payable(msg.sender).call{value: refundAmount}("");
         require(succ, "TokenSale: refund failed");
         uint256 tokenAmount = calculateTokenAmount(refundAmount);
+        token.approve(address(this), tokenAmount);
         token.safeTransferFrom(msg.sender, address(this), tokenAmount);
         emit RefundClaimed(msg.sender, refundAmount);
     }
@@ -142,11 +146,12 @@ contract TokenSale {
         if (publicSaleContributions[msg.sender] == 0)
             revert TokenSale__NoRefundAvailable();
         if (publicSaleContributions[msg.sender] > publicSaleMinContribution)
-            revert TokenSale__NoRefundBelowPresaleMinimumContribution();
+            revert TokenSale__NoRefundAboveMinimumContribution();
         publicSaleContributions[msg.sender] = 0;
         (bool succ, ) = payable(msg.sender).call{value: refundAmount}("");
         require(succ, "TokenSale: refund failed");
         uint256 tokenAmount = calculateTokenAmount(refundAmount);
+        token.approve(address(this), tokenAmount);
         token.safeTransferFrom(msg.sender, address(this), tokenAmount);
         emit RefundClaimed(msg.sender, refundAmount);
     }
